@@ -10,6 +10,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "https://medin-frontend.vercel.app",
 ]
 
 app.add_middleware(
