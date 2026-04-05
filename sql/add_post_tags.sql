@@ -1,0 +1,6 @@
+ALTER TABLE posts
+ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS ix_posts_tags_gin
+ON posts
+USING GIN (tags);
