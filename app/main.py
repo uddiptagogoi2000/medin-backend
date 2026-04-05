@@ -11,6 +11,8 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://medin-frontend.vercel.app",
+    "https://serona.co.in",
+    "https://www.serona.co.in",
 ]
 
 app.add_middleware(
