@@ -189,3 +189,7 @@ class EngagementPromptResponse(BaseModel):
 
 class PromptEventCreate(BaseModel):
     event_type: Literal["shown", "dismissed", "clicked_post", "posted"]
+
+
+class InviteCheckRequest(BaseModel):
+    email: str

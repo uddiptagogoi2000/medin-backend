@@ -103,6 +103,16 @@ class UserPromptEvent(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+class Invite(Base):
+    __tablename__ = "invites"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    used_by_clerk_id = Column(String, nullable=True, index=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 class Comment(Base):
     __tablename__ = "comments"
 
