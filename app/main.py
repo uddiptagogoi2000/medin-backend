@@ -35,7 +35,3 @@ app.include_router(search.router)
 @app.get("/")
 def root():
     return {"message": "API running"}
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
