@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -10,8 +11,14 @@ from app.routers.users import get_db
 
 router = APIRouter(prefix="/engagement", tags=["Engagement"])
 
-PROMPT_COOLDOWN_DAYS = 3
-POST_COOLDOWN_DAYS = 2
+MAX_PROMPT_SHOWS_PER_DAY = 2
+PROMPT_INTERACTION_COOLDOWN_HOURS = 12
+PROMPT_COOLDOWN_EVENT_TYPES = {"dismissed", "posted"}
+
+
+def get_utc_day_window(now: datetime) -> tuple[datetime, datetime]:
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return day_start, day_start + timedelta(days=1)
 
 
 @router.get("/prompts/next", response_model=Optional[schemas.EngagementPromptResponse])
@@ -21,6 +28,23 @@ def get_next_prompt(
 ):
     clerk_id = payload.get("sub")
     now = datetime.now(timezone.utc)
+    day_start, next_day_start = get_utc_day_window(now)
+
+    shown_events_today = (
+        db.query(func.count(models.UserPromptEvent.id))
+        .filter(models.UserPromptEvent.user_clerk_id == clerk_id)
+        .filter(models.UserPromptEvent.event_type == "shown")
+        .filter(
+            and_(
+                models.UserPromptEvent.created_at >= day_start,
+                models.UserPromptEvent.created_at < next_day_start,
+            )
+        )
+        .scalar()
+    )
+
+    if (shown_events_today or 0) >= MAX_PROMPT_SHOWS_PER_DAY:
+        return None
 
     latest_event = (
         db.query(models.UserPromptEvent)
@@ -29,27 +53,17 @@ def get_next_prompt(
         .first()
     )
 
-    if latest_event and latest_event.created_at:
+    if (
+        latest_event
+        and latest_event.event_type in PROMPT_COOLDOWN_EVENT_TYPES
+        and latest_event.created_at
+    ):
         event_created_at = latest_event.created_at
         if event_created_at.tzinfo is None:
             event_created_at = event_created_at.replace(tzinfo=timezone.utc)
 
-        if event_created_at >= now - timedelta(days=PROMPT_COOLDOWN_DAYS):
-            return None
-
-    latest_post = (
-        db.query(models.Post.created_at, models.Post.id)
-        .filter(models.Post.author_clerk_id == clerk_id)
-        .order_by(models.Post.created_at.desc())
-        .first()
-    )
-
-    if latest_post and latest_post.created_at:
-        post_created_at = latest_post.created_at
-        if post_created_at.tzinfo is None:
-            post_created_at = post_created_at.replace(tzinfo=timezone.utc)
-
-        if post_created_at >= now - timedelta(days=POST_COOLDOWN_DAYS):
+        cooldown_cutoff = now - timedelta(hours=PROMPT_INTERACTION_COOLDOWN_HOURS)
+        if event_created_at >= cooldown_cutoff:
             return None
 
     prompts = (
