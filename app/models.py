@@ -107,9 +107,15 @@ class Invite(Base):
     __tablename__ = "invites"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=True, index=True)
+    token_hash = Column(String, unique=True, nullable=True, index=True)
+    invite_type = Column(String, nullable=False, default="email", index=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     used_by_clerk_id = Column(String, nullable=True, index=True)
+    used_by_email = Column(String, nullable=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    note = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

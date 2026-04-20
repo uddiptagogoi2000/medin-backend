@@ -193,3 +193,31 @@ class PromptEventCreate(BaseModel):
 
 class InviteCheckRequest(BaseModel):
     email: str
+
+
+class InviteLinkCreateRequest(BaseModel):
+    note: Optional[str] = None
+
+
+class InviteLinkCreateResponse(BaseModel):
+    invite_url: str
+    expires_at: datetime
+
+
+class InviteTokenValidateRequest(BaseModel):
+    invite_token: str
+
+
+class InviteTokenValidateResponse(BaseModel):
+    valid: bool
+    message: Optional[str] = None
+
+
+class OnboardUserRequest(BaseModel):
+    doctor_id: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    experience: int
+    specialization: str
+    hospital: Optional[str] = None
+    invite_token: Optional[str] = None
